@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # ========== MongoDB ==========
+  mongodb:
+    image: mongo:7.0
+    container_name: gdash-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: gdash
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - gdash-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========== RabbitMQ ==========
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: gdash-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - gdash-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========== NestJS Backend API ==========
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gdash-api
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/gdash?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      WEATHER_CITY: ${WEATHER_CITY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DEFAULT_USER_EMAIL: ${DEFAULT_USER_EMAIL}
+      DEFAULT_USER_PASSWORD: ${DEFAULT_USER_PASSWORD}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gdash-network
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/node_modules:/app/node_modules
+    command: npm run start:dev
+
+  # ========== React + Vite Frontend ==========
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gdash-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://api:3001/api
+      VITE_API_BASE: http://api:3001
+    depends_on:
+      - api
+    networks:
+      - gdash-network
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/node_modules:/app/node_modules
+    command: npm run dev -- --host
+
+  # ========== Python Collector ==========
+  collector:
+    build:
+      context: ./collector
+      dockerfile: Dockerfile
+    container_name: gdash-collector
+    environment:
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      WEATHER_CITY: ${WEATHER_CITY}
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      COLLECTION_INTERVAL: ${COLLECTION_INTERVAL}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - gdash-network
+    volumes:
+      - ./collector:/app
+    command: python main.py
+
+  # ========== Go Worker ==========
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: gdash-worker
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      API_URL: http://api:3001/api
+      LOG_LEVEL: info
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - gdash-network
+    volumes:
+      - ./worker:/app
+    command: go run main.go
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  rabbitmq_data:
+
+networks:
+  gdash-network:
+    driver: bridge
