@@ -8,7 +8,7 @@ import { CreateUserDto } from './dtos/create-user.dto';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<UserDocument> {
     // Verifica se email já existe
     const existingUser = await this.userModel.findOne({
       email: createUserDto.email.toLowerCase(),
@@ -22,11 +22,11 @@ export class UsersService {
     return newUser.save();
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<UserDocument[]> {
     return this.userModel.find().select('-password').exec();
   }
 
-  async findById(id: string): Promise<User> {
+  async findById(id: string): Promise<UserDocument> {
     const user = await this.userModel.findById(id).select('-password').exec();
 
     if (!user) {
@@ -40,7 +40,7 @@ export class UsersService {
     return this.userModel.findOne({ email: email.toLowerCase() }).exec();
   }
 
-  async update(id: string, updateData: Partial<User>): Promise<User> {
+  async update(id: string, updateData: Partial<User>): Promise<UserDocument> {
     const user = await this.userModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .select('-password')

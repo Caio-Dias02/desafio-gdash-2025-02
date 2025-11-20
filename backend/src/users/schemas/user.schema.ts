@@ -2,7 +2,11 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
-export type UserDocument = User & Document;
+export interface UserDocument extends User, Document {
+  comparePassword(password: string): Promise<boolean>;
+}
+
+export type UserDocumentType = UserDocument;
 
 @Schema({ timestamps: true })
 export class User {
