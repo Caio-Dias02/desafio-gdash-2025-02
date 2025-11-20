@@ -33,6 +33,7 @@ Thumbs.db
 
 # Project-specific
 CLAUDE.md
+.gitignore
 
 # Build outputs
 *.o
