@@ -1,0 +1,48 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+*.egg-info/
+
+# Go
+/bin
+go.sum
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+*.log
+
+# Project-specific
+CLAUDE.md
+
+# Build outputs
+*.o
+*.so
+*.dylib
+
+# Testing
+coverage/
+.nyc_output/
+
+# OS
+.env.*.swp
+
