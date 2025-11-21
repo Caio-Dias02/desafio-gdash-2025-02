@@ -11,6 +11,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Controller('api/users')
 export class UsersController {
@@ -40,7 +41,7 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() updateData: Partial<CreateUserDto>) {
+  async update(@Param('id') id: string, @Body() updateData: UpdateUserDto) {
     return this.usersService.update(id, updateData);
   }
 

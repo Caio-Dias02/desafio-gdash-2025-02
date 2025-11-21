@@ -9,13 +9,14 @@ import {
 } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { CreateWeatherLogDto } from './dtos/create-weather-log.dto';
 
 @Controller('api/weather')
 export class WeatherController {
   constructor(private weatherService: WeatherService) {}
 
   @Post('logs')
-  async createLog(@Body() weatherData: any) {
+  async createLog(@Body() weatherData: CreateWeatherLogDto) {
     return this.weatherService.create(weatherData);
   }
 

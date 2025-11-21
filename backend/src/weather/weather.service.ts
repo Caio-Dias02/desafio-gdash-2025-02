@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { WeatherLog, WeatherLogDocument } from './schemas/weather-log.schema';
-
+import { CreateWeatherLogDto } from './dtos/create-weather-log.dto';
 @Injectable()
 export class WeatherService {
   constructor(
@@ -10,7 +10,7 @@ export class WeatherService {
     private weatherLogModel: Model<WeatherLogDocument>,
   ) {}
 
-  async create(weatherData: any): Promise<WeatherLog> {
+  async create(weatherData: CreateWeatherLogDto): Promise<WeatherLog> {
     const newLog = new this.weatherLogModel({
       ...weatherData,
       timestamp: weatherData.timestamp || new Date(),
