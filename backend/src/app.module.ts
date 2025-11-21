@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { WeatherModule } from './weather/weather.module';
 import { InsightsModule } from './insights/insights.module';
+import { ExportModule } from './export/export.module';
 import { UsersService } from './users/users.service';
 
 @Module({
@@ -31,6 +32,7 @@ import { UsersService } from './users/users.service';
     UsersModule,
     WeatherModule,
     InsightsModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
