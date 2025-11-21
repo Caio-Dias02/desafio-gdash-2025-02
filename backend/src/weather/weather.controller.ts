@@ -29,15 +29,6 @@ export class WeatherController {
     return this.weatherService.findAll(city, limit, skip);
   }
 
-  @Get('city/:city')
-  @UseGuards(JwtAuthGuard)
-  async getByCity(
-    @Param('city') city: string,
-    @Query('days') days: number = 7,
-  ) {
-    return this.weatherService.findByCity(city, days);
-  }
-
   @Get('statistics/:city')
   @UseGuards(JwtAuthGuard)
   async getStatistics(

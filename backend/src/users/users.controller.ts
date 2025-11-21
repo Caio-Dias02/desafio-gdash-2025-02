@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -38,7 +38,7 @@ export class UsersController {
     return this.usersService.findById(id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() updateData: Partial<CreateUserDto>) {
     return this.usersService.update(id, updateData);
