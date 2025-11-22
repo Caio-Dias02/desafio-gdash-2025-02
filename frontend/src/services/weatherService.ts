@@ -3,8 +3,8 @@ import { WeatherLog, WeatherStats } from '../types';
 
 export const weatherService = {
   // Listar logs climáticos com filtros
-  async getLogs(city?: string, limit: number = 100, skip: number = 0): Promise<WeatherLog[]> {
-    const response = await api.get<WeatherLog[]>('/weather/logs', {
+  async getLogs(city?: string, limit: number = 100, skip: number = 0): Promise<{ data: WeatherLog[]; total: number }> {
+    const response = await api.get<{ data: WeatherLog[]; total: number }>('/weather/logs', {
       params: { city, limit, skip },
     });
     return response.data;

@@ -37,9 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Atualizar state
       setUser(response.user);
       setToken(response.token);
-    } finally {
+    } catch (error) {
       setIsLoading(false);
+      throw error;
     }
+    setIsLoading(false);
   };
 
   // Função de logout

@@ -1,5 +1,5 @@
-import { Controller, Post, Body, Res, UseGuards, Get } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Post, Body, Res, UseGuards, Get, Req } from '@nestjs/common';
+import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { JwtAuthGuard } from './guards/jwt.guard';
@@ -19,7 +19,7 @@ export class AuthController {
       maxAge: 24 * 60 * 60 * 1000, // 24h
     });
 
-    return res.json({ user });
+    return res.json({ token: accessToken, user });
   }
 
   @Post('logout')
@@ -30,8 +30,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMe(@Res() res: Response) {
+  async getMe(@Req() req: Request) {
     // JwtAuthGuard coloca user em req.user
-    return res.json((res as any).req?.user || {});
+    return (req as any).user || {};
   }
 }

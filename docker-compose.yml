@@ -1,50 +1,122 @@
+version: '3.8'
+
 services:
-  # ========== MongoDB ==========
+  # MongoDB
   mongodb:
-    image: mongo:7.0
+    image: mongo:7.0-alpine
     container_name: gdash-mongodb
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: gdash
+      MONGO_INITDB_ROOT_PASSWORD: password123
     volumes:
       - mongodb_data:/data/db
-      - mongodb_config:/data/configdb
-    networks:
-      - gdash-network
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ========== RabbitMQ ==========
+  # RabbitMQ
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: gdash-rabbitmq
     ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # Management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - gdash-network
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # NestJS Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gdash-backend
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/gdash?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: your-secret-key-here
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DEFAULT_USER_EMAIL: admin@gdash.com
+      DEFAULT_USER_PASSWORD: 123456
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+    command: npm run start:dev
+
+  # Python Collector
+  collector:
+    build:
+      context: ./collector
+      dockerfile: Dockerfile
+    container_name: gdash-collector
+    environment:
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      WEATHER_CITY: Cordeirópolis
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      COLLECTION_INTERVAL: 3600
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./collector:/app
+
+  # Go Worker
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: gdash-worker
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      API_URL: http://backend:3001/api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    volumes:
+      - ./worker:/app
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gdash-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://backend:3001/api
+      VITE_API_BASE: http://backend:3001
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+    command: npm run dev
+
 volumes:
   mongodb_data:
-  mongodb_config:
   rabbitmq_data:
 
 networks:
-  gdash-network:
-    driver: bridge
+  default:
+    name: gdash-network

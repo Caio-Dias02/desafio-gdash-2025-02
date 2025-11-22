@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { weatherService } from '../services/weatherService';
 import { WeatherLog } from '../types';
 import { Download } from 'lucide-react';
+import { Layout } from '../components/Layout';
+import { Button } from '../components/ui/button';
 
 export function Dashboard() {
-  const { user, logout } = useAuth();
   const [logs, setLogs] = useState<WeatherLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,8 +18,8 @@ export function Dashboard() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const data = await weatherService.getLogs('Cordeirópolis', 20);
-      setLogs(data);
+      const response = await weatherService.getLogs('Cordeirópolis', 20);
+      setLogs(response.data || []);
       setError('');
     } catch (err: any) {
       setError('Erro ao carregar dados climáticos');
@@ -38,41 +38,19 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard Climático</h1>
-            <p className="text-gray-600">Bem-vindo, {user?.email}</p>
-          </div>
-          <button
-            onClick={logout}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            Logout
-          </button>
-        </div>
-      </header>
-
+    <Layout>
       {/* Conteúdo */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Botões de exportação */}
         <div className="mb-6 flex gap-4">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
+          <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700">
             <Download size={18} />
             Exportar CSV
-          </button>
-          <button
-            onClick={handleExportXLSX}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
+          </Button>
+          <Button onClick={handleExportXLSX}>
             <Download size={18} />
             Exportar XLSX
-          </button>
+          </Button>
         </div>
 
         {/* Loading */}
@@ -143,7 +121,7 @@ export function Dashboard() {
             <p className="text-gray-600">Nenhum dado disponível</p>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }

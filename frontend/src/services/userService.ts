@@ -15,18 +15,18 @@ export const userService = {
   },
 
   // Criar novo usuário
-  async create(email: string, password: string, role: 'user' | 'admin' = 'user'): Promise<User> {
+  async create(payload: { email: string; password: string; role?: 'user' | 'admin' }): Promise<User> {
     const response = await api.post<User>('/users', {
-      email,
-      password,
-      role,
+      email: payload.email,
+      password: payload.password,
+      role: payload.role || 'user',
     });
     return response.data;
   },
 
   // Atualizar usuário
-  async update(id: string, data: Partial<User>): Promise<User> {
-    const response = await api.patch<User>(`/users/${id}`, data);
+  async update(id: string, payload: { email?: string; password?: string; role?: 'user' | 'admin' }): Promise<User> {
+    const response = await api.patch<User>(`/users/${id}`, payload);
     return response.data;
   },
 
